@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Connector Maze Pro | by Rators Team</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ========================================
+           SISTEMA DE DISEÑO (ESTÉTICA PLATINUM)
+           ======================================== */
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --drawer-w: 340px;
+            --glow: 0 0 25px rgba(139, 92, 246, 0.4);
+            --glass: rgba(255, 255, 255, 0.9);
+        }
+
+        .dark-mode {
+            --bg-body: #020617;
+            --card-bg: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --glow: 0 0 35px rgba(6, 182, 212, 0.5);
+            --glass: rgba(15, 23, 42, 0.95);
+        }
+
+        /* ========================================
+           BASE & ANIMACIONES
+           ======================================== */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Outfit', sans-serif; background: var(--bg-body); color: var(--text-main); 
+            margin: 0; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; min-height: 100vh;
+        }
+
+        /* Fondo con cuadrícula de ingeniería */
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(var(--border) 1px, transparent 1px);
+            background-size: 30px 30px; opacity: 0.2; z-index: -1;
+        }
+
+        /* --- Header con Branding --- */
+        header {
+            position: sticky; top: 0; z-index: 1000; background: var(--glass);
+            backdrop-filter: blur(15px); padding: 1.2rem 2.5rem; display: flex; 
+            justify-content: space-between; align-items: center;
+            border-bottom: 4px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header-brand { display: flex; flex-direction: column; }
+        .header-brand b { 
+            color: var(--primary); font-size: 1.5rem; letter-spacing: 1px; 
+            text-transform: uppercase; text-shadow: var(--glow);
+        }
+        .header-brand span { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+
+        .btn-menu {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; border: none; width: 50px; height: 50px;
+            border-radius: 14px; cursor: pointer; font-size: 1.3rem; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4); transition: 0.3s;
+        }
+        .btn-menu:hover { transform: scale(1.1) rotate(5deg); }
+
+        /* ========================================
+           SIDEBAR (DISEÑO BLINDADO)
+           ======================================== */
+        .sidebar {
+            position: fixed; top: 0; right: -100%; width: var(--drawer-w); height: 100%;
+            background: var(--card-bg); z-index: 2000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 3rem 2.5rem; display: flex; flex-direction: column;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.3); visibility: hidden;
+        }
+        .sidebar.active { right: 0; visibility: visible; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1500; display: none; backdrop-filter: blur(8px); }
+        .sidebar-overlay.active { display: block; }
+
+        .close-side { align-self: flex-end; font-size: 1.5rem; cursor: pointer; margin-bottom: 2.5rem; color: var(--text-main); background: none; border: none; }
+
+        .nav-item {
+            width: 100%; padding: 18px; margin: 8px 0; border: 2px solid transparent; background: transparent;
+            color: var(--text-main); font-weight: 800; text-align: left; cursor: pointer;
+            border-radius: 18px; display: flex; align-items: center; gap: 15px; transition: 0.3s;
+        }
+        .nav-item:hover { background: rgba(139, 92, 246, 0.1); border-color: var(--primary); color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: var(--glow); }
+
+        /* Switch Modo Oscuro */
+        .theme-container { margin-top: auto; padding-top: 25px; border-top: 2px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .switch { position: relative; width: 64px; height: 34px; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; border-radius: 34px; transition: 0.4s; }
+        .slider:before { position: absolute; content: "☀️"; height: 26px; width: 26px; left: 4px; bottom: 4px; background: white; border-radius: 50%; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input:checked + .slider { background: var(--primary); }
+        input:checked + .slider:before { transform: translateX(30px); content: "🌙"; }
+
+        /* ========================================
+           SECCIONES & CARDS
+           ======================================== */
+        .container { max-width: 1100px; margin: 3rem auto; padding: 0 25px; }
+        .section { display: none; animation: slideUp 0.6s ease-out forwards; }
+        .section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { 
+            background: var(--card-bg); border-radius: 50px; padding: 4rem; 
+            border: 2px solid var(--border); box-shadow: var(--shadow); 
+            margin-bottom: 3rem; position: relative; overflow: hidden;
+        }
+
+        h1 { font-size: clamp(2.2rem, 6vw, 3.8rem); font-weight: 800; margin: 0 0 1.5rem 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* --- Puntuación Pro Reordenada --- */
+        .punc-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-top: 3rem; }
+        .punc-card { 
+            background: var(--bg-body); border: 2px solid var(--border); border-radius: 35px; 
+            padding: 2.5rem; transition: 0.3s; position: relative;
+        }
+        .punc-card:hover { border-color: var(--secondary); transform: translateY(-8px); box-shadow: var(--glow); }
+        .punc-card h3 { color: var(--primary); font-size: 1.4rem; margin-top: 0; border-left: 5px solid var(--primary); padding-left: 15px; }
+        .punc-example { 
+            font-family: 'JetBrains Mono', monospace; background: #0f172a; color: #38bdf8; 
+            padding: 18px; border-radius: 15px; display: block; margin-top: 20px; font-size: 0.95rem;
+            border: 1px solid rgba(56, 189, 248, 0.2); line-height: 1.6;
+        }
+
+        /* --- Flashcards con Efecto Glow --- */
+        .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; margin-top: 3rem; }
+        .connector-card { background: transparent; width: 100%; height: 240px; perspective: 1200px; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .connector-card.flipped .card-inner { transform: rotateY(180deg); }
+        
+        .card-face { 
+            position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; 
+            border-radius: 40px; border: 3px solid var(--border); padding: 2rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        .card-front { background: var(--card-bg); color: var(--primary); }
+        .connector-card:hover .card-front { box-shadow: var(--glow); border-color: var(--primary); }
+        
+        .card-back { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; transform: rotateY(180deg); }
+        
+        .card-face h3 { font-size: 2.2rem; margin: 0; font-weight: 800; letter-spacing: -1px; }
+        .card-face p { font-size: 1rem; line-height: 1.5; margin-top: 10px; font-weight: 600; }
+
+        /* ========================================
+           NEON ARENA (POLLITO LEFT MOVE)
+           ======================================== */
+        .neon-stage {
+            width: 100%; height: 400px; background: #020617; border-radius: 50px;
+            position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between;
+            padding: 0 80px 60px; border: 6px solid var(--border);
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+        }
+        .tower { 
+            width: 160px; height: 220px; background: #0f172a; border: 3px solid #1e293b; 
+            border-radius: 20px 20px 0 0; position: relative; z-index: 5;
+            display: flex; align-items: center; justify-content: center; color: #334155; font-weight: 800;
+        }
+        .tower-target { border-color: var(--secondary); box-shadow: 0 0 30px rgba(6, 182, 212, 0.3); }
+        .tower-start { border-color: var(--primary); box-shadow: 0 0 30px rgba(139, 92, 246, 0.3); }
+
+        .neon-line {
+            position: absolute; bottom: 110px; right: 240px; width: 0; height: 15px;
+            background: var(--secondary); border-radius: 8px; 
+            box-shadow: 0 0 40px var(--secondary), 0 0 10px #fff;
+            transition: 1.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 4;
+        }
+        .chicken-avatar {
+            position: absolute; bottom: 115px; right: 130px; width: 70px; height: 70px;
+            transition: 1.8s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10;
+        }
+        .chicken-move-left { right: 800px !important; }
+
+        .btn-action {
+            background: var(--card-bg); border: 3px solid var(--border); padding: 18px 30px; 
+            border-radius: 20px; cursor: pointer; color: var(--text-main); font-weight: 800; 
+            transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-action:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2); }
+
+        /* ========================================
+           CERTIFICADO (HORIZONTAL PLATINUM)
+           ======================================== */
+        .timer-track { width: 100%; height: 16px; background: var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 3rem; }
+        #timer-glow { width: 100%; height: 100%; background: var(--accent); transition: linear; box-shadow: 0 0 15px var(--accent); }
+        
+        .quiz-opt { 
+            width: 100%; padding: 22px; margin: 12px 0; border: 3px solid var(--border); 
+            border-radius: 25px; background: var(--card-bg); color: var(--text-main); 
+            font-weight: 800; text-align: left; cursor: pointer; transition: 0.3s;
+        }
+        .quiz-opt:hover { border-color: var(--primary); background: rgba(139, 92, 246, 0.05); transform: translateX(10px); }
+
+        #cert-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.94); z-index: 5000; display: none; align-items: center; justify-content: center;
+            padding: 40px; backdrop-filter: blur(20px);
+        }
+        #certificate {
+            background: #fff; color: #1e1b4b; padding: 60px; border: 20px double #1e1b4b;
+            width: 1000px; height: 700px; position: relative; text-align: center;
+            display: flex; flex-direction: column; box-shadow: 0 60px 150px rgba(0,0,0,0.8);
+        }
+        
+        /* Ajuste de Sello para evitar encime */
+        .cert-header-layout { display: flex; justify-content: space-between; align-items: flex-start; text-align: left; margin-bottom: 40px; }
+        .seal-container { width: 150px; height: 150px; border: 5px solid #1e1b4b; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .rooster-svg { width: 80px; fill: #000; }
+        
+        .cert-body-layout { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .cert-main-h1 { font-size: 4.5rem; font-weight: 800; color: #8b5cf6; margin: 0; letter-spacing: 3px; }
+        .cert-user { font-size: 4rem; font-family: 'serif'; border-bottom: 6px solid #1e1b4b; margin: 30px 0; display: inline-block; padding: 0 60px; }
+
+        .cert-footer-layout { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; }
+
+        footer { padding: 6rem 20px; text-align: center; border-top: 6px solid var(--primary); margin-top: 6rem; background: var(--card-bg); line-height: 2.2; }
+        .wa-btn { position: fixed; bottom: 45px; left: 45px; background: #25d366; color: white; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.3); text-decoration: none; transition: 0.3s; }
+
+        @media (max-width: 1050px) { #certificate { width: 95%; height: auto; aspect-ratio: 1.4/1; padding: 40px; } .cert-main-h1 { font-size: 2.5rem; } .cert-user { font-size: 2.8rem; } }
+    </style>
+</head>
+<body onclick="unlockAudio()">
+
+<header>
+    <div class="header-brand">
+        <b>CONNECTOR MAZE PRO</b>
+        <span>by Rators Team</span>
+    </div>
+    <button class="btn-menu" onclick="openSidebar()"><i class="fas fa-bars"></i></button>
+</header>
+
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-side" onclick="closeSidebar()">✕</button>
+    <button class="nav-item active" onclick="nav('home', this)"><i class="fas fa-house"></i> DASHBOARD</button>
+    <button class="nav-item" onclick="nav('punc', this)"><i class="fas fa-pen-fancy"></i> ARQUITECTURA</button>
+    <button class="nav-item" onclick="nav('vocab', this)"><i class="fas fa-clone"></i> FLASHCARDS</button>
+    <button class="nav-item" onclick="nav('arena', this)"><i class="fas fa-bridge"></i> NEON ARENA</button>
+    <button class="nav-item" onclick="nav('test', this)"><i class="fas fa-award"></i> CERTIFICACIÓN</button>
+    
+    <div class="theme-container">
+        <span style="font-weight:800; font-size:0.9rem;">DARK INTERFACE</span>
+        <label class="switch">
+            <input type="checkbox" onchange="toggleDarkTheme()">
+            <span class="slider"></span>
+        </label>
+    </div>
+</div>
+
+<div class="container">
+    
+    <section id="sec-home" class="section active">
+        <div class="card">
+            <h1>The Cohesion Strategy</h1>
+            <p style="font-size: 1.35rem; color: var(--text-muted); line-height: 1.8;">
+                Dominar los conectores avanzados es la llave maestra para la fluidez en niveles B2/C1. No se trata solo de conocer la palabra, sino de entender la <strong>Ingeniería Lógica</strong> que permite unir ideas complejas con claridad y elegancia.
+            </p>
+            <div style="background:rgba(139, 92, 246, 0.12); padding:3rem; border-radius:40px; border-left:15px solid var(--primary); margin:3.5rem 0;">
+                <h3 style="margin-top:0;">Fases del Laboratorio:</h3>
+                <ul style="font-weight:700; color:var(--text-main); line-height:2.4; font-size: 1.2rem;">
+                    <li><i class="fas fa-code-branch" style="color:var(--primary)"></i> <strong>Arquitectura:</strong> El uso preciso de contrastes y adiciones.</li>
+                    <li><i class="fas fa-terminal" style="color:var(--primary)"></i> <strong>Puntuación Pro:</strong> Dominio del punto y coma (;) y las comas.</li>
+                    <li><i class="fas fa-shield-check" style="color:var(--primary)"></i> <strong>Certificación:</strong> Obtén el sello oficial del Rators Club.</li>
+                </ul>
+            </div>
+            <p>Este laboratorio ha sido diseñado por el **Rators Team** para eliminar los errores comunes y elevar tu nivel de escritura y habla al estándar profesional.</p>
+        </div>
+    </section>
+
+    <section id="sec-punc" class="section">
+        <div class="card">
+            <h1>Syntax Engineering</h1>
+            <p>En el nivel profesional, la puntuación es la que da el ritmo al pensamiento. Analiza las estructuras fundamentales:</p>
+            
+            <div class="punc-wrapper">
+                <div class="punc-card">
+                    <h3>Conjunctive Adverbs</h3>
+                    <p>Palabras como <i>However</i> o <i>Therefore</i> actúan como puentes pesados. Requieren separación total.</p>
+                    <code class="punc-example">Idea A; however, Idea B.</code>
+                </div>
+                <div class="punc-card">
+                    <h3>Subordinating Conjunctions</h3>
+                    <p>Palabras como <i>Although</i> o <i>While</i>. La tensión de la coma depende de su posición en la frase.</p>
+                    <code class="punc-example">Although Idea A, Idea B.</code>
+                </div>
+                <div class="punc-card">
+                    <h3>Prepositions</h3>
+                    <p>Palabras como <i>Despite</i>. Se conectan directamente a sustantivos o acciones (-ing).</p>
+                    <code class="punc-example">Despite the noise, I slept.</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-vocab" class="section">
+        <div class="card">
+            <h1>Neon Flash Deck</h1>
+            <p>Interacciona con las tarjetas para desbloquear usos técnicos y escuchar la pronunciación en contexto.</p>
+            <div class="deck-grid" id="deckGrid"></div>
+        </div>
+    </section>
+
+    <section id="sec-arena" class="section">
+        <div class="card">
+            <h1>Neon Arena Simulator</h1>
+            <p>Selecciona el conector correcto para construir el puente y permitir que el Rator Chicken cruce hacia la izquierda.</p>
+            
+            <div class="neon-stage">
+                <div class="tower tower-target">IDEA B</div>
+                <div class="neon-line" id="neonLine"></div>
+                <div class="chicken-avatar" id="avatarChicken">
+                    <svg viewBox="0 0 100 100" style="filter:drop-shadow(0 0 12px #06b6d4);">
+                        <path d="M30 60 C30 40 45 35 55 35 C70 35 75 50 75 65 Q75 80 55 80 Q40 80 30 60" fill="white" stroke="#1e1b4b" stroke-width="4"/>
+                        <path d="M45 35 Q50 15 55 35 Q60 15 65 35" fill="#ef4444" stroke="#000" stroke-width="1"/>
+                        <path d="M75 55 L85 60 L75 65 Z" fill="#f59e0b"/>
+                        <circle cx="55" cy="50" r="3" fill="#000"/>
+                    </svg>
+                </div>
+                <div class="tower tower-start">IDEA A</div>
+            </div>
+
+            <div style="margin-top:3rem; text-align:center;">
+                <h2 id="currentSentence" style="font-size:1.8rem;">"He was tired; ____, he stayed late."</h2>
+                <div class="punc-wrapper" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));" id="arenaBtns"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-test" class="section">
+        <div class="card">
+            <div id="testStarter">
+                <h1>Certification Challenge</h1>
+                <p style="font-size:1.3rem; margin-bottom:3rem;">Supera los 10 reactivos de ingeniería de cohesión. Tiempo: 5 minutos. Precisión: 70%.</p>
+                <button class="btn-action" style="width:100%; font-size:1.6rem; background:var(--primary); color:white;" onclick="runTest()">INICIAR EXAMEN 🚀</button>
+            </div>
+            <div id="testUI" style="display:none;">
+                <div class="timer-track"><div id="timer-glow"></div></div>
+                <div id="quizPort"></div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div id="cert-overlay">
+    <div id="certificate">
+        <div class="cert-header-layout">
+            <div style="text-align:left;">
+                <b>RATORS ACADEMY</b><br>
+                <small>ADVANCED COHESION PATHWAY</small>
+            </div>
+            <div class="seal-container">
+                <svg class="rooster-svg" viewBox="0 0 100 100">
+                    <path d="M30 60 C30 40 45 35 55 35 C70 35 75 50 75 65 Q75 80 55 80 Q40 80 30 60" fill="none" stroke="#1e1b4b" stroke-width="4"/>
+                    <path d="M45 35 Q50 15 55 35 Q60 15 65 35" fill="#ef4444" stroke="#000" stroke-width="1"/>
+                    <path d="M75 55 L85 60 L75 65 Z" fill="#f59e0b"/>
+                </svg>
+                <small style="font-size:0.75rem; font-weight:800; margin-top:5px;">RATORS CLUB</small>
+            </div>
+        </div>
+        
+        <div class="cert-body-layout">
+            <div class="cert-main-h1">CONNECTOR MASTER</div>
+            <p style="text-transform:uppercase; letter-spacing:5px; font-weight:600; margin-top:20px;">Este reconocimiento se otorga a:</p>
+            <div class="cert-user" id="userPrintName">STUDENT NAME</div>
+            <p style="font-size:1.4rem; margin-top:30px; font-weight:600;">Por demostrar maestría técnica en la construcción de oraciones complejas, lógica gramatical avanzada y precisión en el uso de conectores profesionales.</p>
+        </div>
+
+        <div class="cert-footer-layout">
+            <div style="text-align:left; font-size:1rem; opacity:0.7;">ID: RT-2026-PLATINUM<br>Verificado por Rators Engine</div>
+            <div style="text-align:right;">
+                <span style="font-weight:800; font-size:1.6rem;">Teacher Netza Varo</span><br>
+                <small>Professional English Coach</small>
+            </div>
+        </div>
+    </div>
+    <div class="no-print" style="margin-top:35px;">
+        <button class="btn-action" style="background:#475569; color:white;" onclick="location.reload()">CERRAR Y REINICIAR</button>
+    </div>
+</div>
+
+<a href="https://wa.me/523231116425" class="wa-btn" target="_blank"><i class="fab fa-whatsapp"></i></a>
+
+<footer>
+    <div style="font-weight:800; color:var(--primary); font-size:1.6rem; margin-bottom:15px;">TEACHER NETZA VARO</div>
+    <p>Licenciado en Ciencias de la Educación | Especialista en Fluidez B2/C1</p>
+    <p>Tepic, Nayarit | <a href="mailto:teacher.netza.varo@gmail.com" style="color:var(--primary); text-decoration:none;">teacher.netza.varo@gmail.com</a></p>
+    <div style="margin-top:30px; opacity:0.3; font-size:0.8rem;">Licensed under GNU GPL v3.0 | Rators Team Platinum Edition 2026</div>
+</footer>
+
+<script>
+    /* ========================================
+       ENGINE: AUDIO & UI
+       ======================================== */
+    let audioEngine = false;
+    function unlockAudio() { if(!audioEngine) { window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); audioEngine = true; } }
+    function talk(txt, rate = 0.85) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(txt);
+        msg.lang = 'en-US'; msg.rate = rate;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function openSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); document.getElementById('overlay').classList.remove('active'); }
+    function toggleDarkTheme() { document.body.classList.toggle('dark-mode'); }
+
+    function nav(id, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('sec-' + id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
+        closeSidebar(); window.scrollTo(0,0);
+        if(id === 'arena') initArena();
+    }
+
+    /* ========================================
+       DATA: 12 CONNECTORS
+       ======================================== */
+    const connectors = [
+        {c: "However", t: "Contrast", u: "Sin embargo. Uso con punto y coma.", e: "It was late; however, he finished."},
+        {c: "Therefore", t: "Result", u: "Por lo tanto. Indica consecuencia.", e: "He failed; therefore, he studied."},
+        {c: "Moreover", t: "Addition", u: "Además. Suma información.", e: "It is fast; moreover, it is safe."},
+        {c: "Despite", t: "Contrast", u: "A pesar de. Usa sustantivo o -ing.", e: "Despite the noise, I slept."},
+        {c: "Although", t: "Contrast", u: "Aunque. Une dos ideas.", e: "Although it was hot, we ran."},
+        {c: "Furthermore", t: "Addition", u: "Es más. Muy formal.", e: "He is talented; furthermore, kind."},
+        {c: "Consequently", t: "Result", u: "En consecuencia. Resultado lógico.", e: "It rained; consequently, roads closed."},
+        {c: "Nevertheless", t: "Contrast", u: "No obstante. Contraste fuerte.", e: "Risk was high; nevertheless, he did it."},
+        {c: "Otherwise", t: "Condition", u: "De lo contrario.", e: "Study; otherwise, you will fail."},
+        {c: "Whereas", t: "Contrast", u: "Mientras que. Compara hechos.", e: "I love cats, whereas he loves dogs."},
+        {c: "In addition", t: "Addition", u: "Adicionalmente.", e: "I like tea; in addition, I like cake."},
+        {c: "Nonetheless", t: "Contrast", u: "Aún así. Muy académico.", e: "It was hard; nonetheless, he won."}
+    ];
+
+    function buildDeck() {
+        const port = document.getElementById('deckGrid');
+        connectors.forEach(d => {
+            const wrap = document.createElement('div');
+            wrap.className = 'connector-card';
+            wrap.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-face card-front"><h3>${d.c}</h3><p>${d.t}</p><small>Unlock logic</small></div>
+                    <div class="card-face card-back"><p>${d.u}</p><p style="color:var(--accent)">Ex: ${d.e}</p></div>
+                </div>`;
+            wrap.onclick = () => { wrap.classList.toggle('flipped'); talk(d.c); setTimeout(()=>talk(d.e), 1000); };
+            port.appendChild(wrap);
+        });
+    }
+
+    /* ========================================
+       ARENA: IZQUIERDA
+       ======================================== */
+    const missions = [
+        {s: "He was ill; ____, he worked hard.", a: "however", o: ["however", "moreover", "since"]},
+        {s: "It rained hard; ____, the road was closed.", a: "therefore", o: ["therefore", "despite", "although"]},
+        {s: "____ the noise, she finished the report.", a: "despite", o: ["despite", "although", "while"]},
+        {s: "The food is cheap; ____, it's delicious.", a: "moreover", o: ["moreover", "but", "so"]}
+    ];
+    let curMiss = 0;
+
+    function initArena() {
+        const d = missions[curMiss];
+        document.getElementById('currentSentence').innerText = d.s;
+        const port = document.getElementById('arenaBtns');
+        port.innerHTML = d.o.map(opt => `<button class="btn-action" onclick="hitArena('${opt}', '${d.a}')">${opt}</button>`).join('');
+        resetStage();
+    }
+
+    function hitArena(c, a) {
+        talk(c);
+        if(c === a) {
+            document.getElementById('neonLine').style.width = "520px";
+            setTimeout(() => {
+                document.getElementById('avatarChicken').classList.add('chicken-move-left');
+                confetti({particleCount: 50, spread: 70});
+                setTimeout(() => {
+                    curMiss = (curMiss + 1) % missions.length;
+                    initArena();
+                }, 2200);
+            }, 1000);
+        } else {
+            document.getElementById('currentSentence').style.color = "var(--error)";
+            setTimeout(() => document.getElementById('currentSentence').style.color = "", 1000);
+        }
+    }
+
+    function resetStage() {
+        document.getElementById('neonLine').style.width = "0";
+        document.getElementById('avatarChicken').classList.remove('chicken-move-left');
+    }
+
+    /* ========================================
+       TEST (10 Qs)
+       ======================================== */
+    const quizData = [
+        {q: "Estructura correcta para 'However':", a: "A; however, B", o: ["A; however, B", "A, however B", "A however B"]},
+        {q: "Contraste seguido de sustantivo:", a: "Despite", o: ["Despite", "Although", "But"]},
+        {q: "Indica consecuencia o resultado:", a: "Therefore", o: ["Therefore", "Moreover", "Since"]},
+        {q: "Puntuación de 'Although' al inicio:", a: "Although A, B.", o: ["Although A, B.", "Although A; B.", "Aunque A B."]},
+        {q: "Sinónimo de 'Moreover':", a: "Furthermore", o: ["Furthermore", "However", "Consequently"]},
+        {q: "Alternativa o condición negativa:", a: "Otherwise", o: ["Otherwise", "Therefore", "Moreover"]},
+        {q: "Compara dos hechos diferentes:", a: "Whereas", o: ["Whereas", "Despite", "Because"]},
+        {q: "Estructura: '____ the heat, we ran.'", a: "Despite", o: ["Despite", "Although", "But"]},
+        {q: "Conector de causa:", a: "Since", o: ["Since", "However", "Consequently"]},
+        {q: "Contraste fuerte entre oraciones:", a: "Nevertheless", o: ["Nevertheless", "Furthermore", "Since"]}
+    ];
+    let score = 0, curQ = 0, clock;
+
+    function runTest() {
+        document.getElementById('testStarter').style.display = 'none';
+        document.getElementById('testUI').style.display = 'block';
+        let t = 300;
+        clock = setInterval(() => {
+            t -= 0.1;
+            document.getElementById('timer-glow').style.width = (t/300)*100 + "%";
+            if(t <= 0) { clearInterval(clock); location.reload(); }
+        }, 100);
+        showQuiz();
+    }
+
+    function showQuiz() {
+        if(curQ >= quizData.length) {
+            clearInterval(clock);
+            const p = (score/quizData.length)*100;
+            if(p >= 70) {
+                const n = prompt(`¡Aprobado con ${p}%! Ingresa tu nombre:`);
+                document.getElementById('userPrintName').innerText = n || "Student";
+                document.getElementById('cert-overlay').style.display = 'flex';
+                confetti({particleCount: 200, spread: 100});
+            } else { alert("Puntaje insuficiente."); location.reload(); }
+            return;
+        }
+        const d = quizData[curQ];
+        document.getElementById('quizPort').innerHTML = `<h3 style="font-size:1.9rem;">${curQ+1}. ${d.q}</h3>` + d.o.map(o => `<button class="quiz-opt" onclick="ans('${o}', '${d.a}')">${o}</button>`).join('');
+    }
+
+    function ans(c, a) {
+        if(c === a) score++;
+        curQ++; showQuiz();
+    }
+
+    window.onload = () => { buildDeck(); };
+</script>
+</body>
+</html>
